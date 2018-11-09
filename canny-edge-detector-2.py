@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 # Import INPUT IMAGE
 # Translate into indexed array via numpy
 try:
-	input_image = Image.open("/Users/GAO/Documents/NYU Fall 2018/Computer Vision/CannyEdgeDetector/zebra-crossing-1.bmp")
+	input_image = Image.open("/Users/GAO/Documents/NYU Fall 2018/Computer Vision/CannyEdgeDetector/bridge.bmp")
 except IOerror:    #Error case
 	pass
 indexed_image = numpy.array(input_image)
@@ -38,6 +38,7 @@ def gaussian(x):
 
 	plt.imshow(gaussianresult, cmap='gray')
 	plt.show()
+
 	return gaussianresult
 
 
@@ -45,54 +46,56 @@ def gaussian(x):
 def gradientify(y):
 	#Implement Prewitt's operator to determine X and Y magnitude of gradient
 	dim = y.shape
-	gradient_magnitude_horiz_arr = numpy.zeros(dim, dtype=numpy.int)
-	gradient_magnitude_vert_arr = numpy.zeros(dim, dtype=numpy.int)
-	gradient_magnitude_arr = numpy.zeros(dim, dtype=numpy.int)
-	gradient_angle_arr = numpy.zeros(dim)
+	gx_arr = numpy.zeros(dim, dtype=numpy.int)
+	gy_arr = numpy.zeros(dim, dtype=numpy.int)
+	g_magnitude_arr = numpy.zeros(dim, dtype=numpy.int)
+	g_angle_arr = numpy.zeros(dim)
+	img_submatrix = numpy.zeros((3,3))
+
+	prewitt_gx = numpy.array([[-1,0,1],
+							  [-1,0,1],
+							  [-1,0,1]])
+	prewitt_gy = numpy.array([[1,1,1],
+							  [0,0,0],
+							  [-1,-1,-1]])
 
 	for i in range(1,(y.shape[0]-1)):			#iterates according to # of horizontal pixels in input image (shape[1] = # columns / horizontal dimension)
 		for j in range(1,(y.shape[1]-1)):		#iterates according to # of vertical pixels in input image  (shape[0] = # rows / vertical dimension)
 		
-			gx = ((y[i-1,j+1] + y[i,j+1] + y[i+1,j+1]) - (y[i-1,j-1] + y[i,j-1] + y[i+1,j-1]))
-			abs_gx = abs(gx)
+			img_submatrix = y[i-1:i+2, j-1:j+2]
+			gx_sum = 0
+			gy_sum = 0
+			for k in range(0,3):
+				for l in range(0,3):
+					gx_sum += img_submatrix[k,l] * prewitt_gx[k,l]
+					gy_sum += img_submatrix[k,l] * prewitt_gy[k,l]
+			
+			abs_gx = abs(gx_sum)
 			normal_gx = abs_gx/6
-			print(i,j)
-			print(gx)
-			gradient_magnitude_horiz_arr[i,j] = normal_gx
-
-			gy = ((y[i-1,j-1] + y[i-1,j] + y[i-1,j+1]) - (y[i+1,j-1] + y[i+1,j] + y[i+1,j+1]))
-			abs_gy = abs(gy)
+			gx_arr[i,j] = normal_gx
+			
+			abs_gy = abs(gy_sum)
 			normal_gy = abs_gy/6
+			gy_arr[i,j] = normal_gy
 
-			print(i,j)
-			print(gy)
-			gradient_magnitude_vert_arr[i,j] = normal_gy
+			g_magnitude_arr[i,j] = math.sqrt(normal_gx**2 + normal_gy**2)
+			g_angle_arr[i,j] = math.degrees(math.atan2(normal_gy,normal_gx))
 
-			gradient_magnitude = math.sqrt(normal_gx**2 + normal_gy**2)
-			#print(i,j)
-			#print(gx,gy)
-			gradient_angle = math.degrees(math.atan2(gy,gx))
-			#print(gradient_angle)
 
-			gradient_magnitude_arr[i,j] = int(gradient_magnitude)
-			gradient_angle_arr[i,j] = gradient_angle
-
-	#print(gradient_magnitude_arr)
-
-	plt.imshow(gradient_magnitude_horiz_arr, cmap='gray')
+	plt.imshow(gx_arr, cmap='gray')
 	plt.show()
 
-	plt.imshow(gradient_magnitude_vert_arr, cmap='gray') 
+	plt.imshow(gy_arr, cmap='gray') 
 	plt.show()
 
-	plt.imshow(gradient_magnitude_arr, cmap='gray')
+	plt.imshow(g_magnitude_arr, cmap='gray')
 	plt.show()
 
-	plt.imshow(gradient_angle_arr, cmap='gray')
+	plt.imshow(g_angle_arr, cmap='gray')
 	plt.show()
 
 
-	return (gradient_magnitude_arr, gradient_angle_arr)
+	return (g_magnitude_arr, g_angle_arr)
 
 
 
@@ -142,7 +145,6 @@ def nms((magnitude, angle)):
 				else:
 					nms_result[i,j] = 0
 
-	#print(nms_result)
 	plt.imshow(nms_result, cmap='gray')
 	plt.show()
 	return nms_result
@@ -182,6 +184,9 @@ def threshold(r):
 		for j in range(0,(r10.shape[1]-1)):
 			if r10[i,j] < t10:
 				r10[i,j] = 0
+			else:
+				r10[i,j] = 255
+
 	plt.imshow(r10, cmap='gray')
 	plt.show()
 
@@ -201,6 +206,8 @@ def threshold(r):
 		for j in range(0,(r30.shape[1]-1)):
 			if r30[i,j] < t30:
 				r30[i,j] = 0
+			else:
+				r30[i,j] = 255
 	plt.imshow(r30, cmap='gray')
 	plt.show()
 
@@ -220,6 +227,9 @@ def threshold(r):
 		for j in range(0,(r50.shape[1]-1)):
 			if r50[i,j] < t50:
 				r50[i,j] = 0
+			else:
+				r50[i,j] = 255
+
 	plt.imshow(r50, cmap='gray')
 	plt.show()
 
@@ -239,6 +249,8 @@ def threshold(r):
 		for j in range(0,(r70.shape[1]-1)):
 			if r70[i,j] < t70:
 				r70[i,j] = 0
+			else:
+				r70[i,j] = 255
 	plt.imshow(r70, cmap='gray')
 	plt.show()
 
@@ -258,12 +270,12 @@ def threshold(r):
 		for j in range(0,(r90.shape[1]-1)):
 			if r90[i,j] < t90:
 				r90[i,j] = 0
+			else:
+				r90[i,j] = 255
 	plt.imshow(r90, cmap='gray')
 	plt.show()
 
-	return r70
-
-#gradientify(indexed_image)
+	return r10
 
 
 def cannyedges(q):
@@ -272,7 +284,7 @@ def cannyedges(q):
 	step3 = nms(step2)
 	step4 = threshold(step3)
 	return step4
-#print(indexed_image)
 
 output_image = cannyedges(indexed_image)
-print(output_image[1].shape)
+plt.imshow(output_image, cmap='gray')
+plt.show()
